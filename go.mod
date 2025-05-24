@@ -3,6 +3,7 @@ module github.com/khrompus/go_final_project
 go 1.23.4
 
 require (
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/stretchr/testify v1.10.0
 	modernc.org/sqlite v1.37.0
