@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/khrompus/go_final_project/pkg/api"
 	"github.com/khrompus/go_final_project/pkg/db"
-	"net/http"
 )
 
 func Run(storage *db.TaskStorage) error {

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/khrompus/go_final_project/pkg/db"
-	"github.com/khrompus/go_final_project/pkg/server"
 	"log"
 	_ "modernc.org/sqlite"
+
+	"github.com/khrompus/go_final_project/pkg/db"
+	"github.com/khrompus/go_final_project/pkg/server"
 )
 
 func main() {
