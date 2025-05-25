@@ -2,12 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/khrompus/go_final_project/pkg/db"
 	"net/http"
 	"strings"
+
+	"github.com/khrompus/go_final_project/pkg/db"
 )
 
-func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (dBase *API) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		writeError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -34,7 +35,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.UpdateTask(&task); err != nil {
+	if err := dBase.storage.UpdateTask(&task); err != nil {
 		if err.Error() == "task not found" {
 			writeError(w, "Задача не найдена", http.StatusNotFound)
 		} else {

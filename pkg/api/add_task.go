@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/khrompus/go_final_project/pkg/db"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/khrompus/go_final_project/pkg/db"
 )
 
 func afterNow(now, t time.Time) bool {
@@ -20,11 +21,11 @@ func checkDate(task *db.Task) error {
 	now := time.Now()
 	// Проверяем пустая ли строка с датой
 	if len(task.Date) == 0 {
-		task.Date = now.Format("20060102")
+		task.Date = now.Format(layout)
 		return nil
 	}
 	// Проверяем валидность даты
-	t, err := time.Parse("20060102", task.Date)
+	t, err := time.Parse(layout, task.Date)
 	if err != nil {
 		return fmt.Errorf("неверный формат даты. Ожидается YYYYMMDD")
 	}
@@ -33,7 +34,7 @@ func checkDate(task *db.Task) error {
 	// Если правило повтора не указано, просто проверяем дату
 	if task.Repeat == "" {
 		if now.After(t) {
-			task.Date = now.Format("20060102")
+			task.Date = now.Format(layout)
 		}
 		return nil
 	}
@@ -45,7 +46,7 @@ func checkDate(task *db.Task) error {
 	if afterNow(now, t) {
 		if len(task.Repeat) == 0 {
 			// если правила повторения нет, берём сегодняшнее число
-			task.Date = now.Format("20060102")
+			task.Date = now.Format(layout)
 		} else {
 			// иначе берём вычисленную следующую дату
 			task.Date = next
@@ -55,7 +56,11 @@ func checkDate(task *db.Task) error {
 	return nil
 }
 
-func addTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (dBase *API) addTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var task db.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		writeError(w, "Invalid JSON format", http.StatusBadRequest)
@@ -72,16 +77,15 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := db.AddTask(&task)
+	id, err := dBase.storage.AddTask(&task)
 	if err != nil {
 		writeError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Возвращаем JSON-объект с ID вместо просто числа
-	writeJson(w, struct {
-		ID int64 `json:"id"`
-	}{
-		ID: id,
-	})
+	responseTaskID := db.Task{
+		ID: fmt.Sprintf("%d", id), // Преобразуем int64 ID в строку
+	}
+	writeJson(w, &responseTaskID)
 }

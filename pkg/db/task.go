@@ -14,16 +14,13 @@ type Task struct {
 }
 
 // Tasks получаем задачи по заданному лимиту
-func Tasks(limit int) ([]Task, error) {
-	if DB == nil {
-		return nil, fmt.Errorf("database connection is not initialized")
-	}
+func (s *TaskStorage) Tasks(limit int) ([]Task, error) {
 
 	query := `SELECT id, date, title, comment, repeat 
               FROM scheduler 
               ORDER BY date ASC 
               LIMIT ?`
-	rows, err := DB.Query(query, limit)
+	rows, err := s.db.Query(query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %v", err)
 	}
@@ -45,11 +42,11 @@ func Tasks(limit int) ([]Task, error) {
 }
 
 // AddTask добавляем задачу в бд
-func AddTask(task *Task) (int64, error) {
+func (s *TaskStorage) AddTask(task *Task) (int64, error) {
 	var id int64
 	// Запрос в бд на создание задачи
 	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
-	res, err := DB.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	res, err := s.db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
 	if err == nil {
 		id, err = res.LastInsertId()
 	}
@@ -57,9 +54,9 @@ func AddTask(task *Task) (int64, error) {
 }
 
 // GetTask Получаем задачу по id
-func GetTask(id string) (*Task, error) {
+func (s *TaskStorage) GetTask(id string) (*Task, error) {
 	query := `SELECT * FROM scheduler WHERE id = ?`
-	row := DB.QueryRow(query, id)
+	row := s.db.QueryRow(query, id)
 
 	var task Task
 
@@ -71,11 +68,11 @@ func GetTask(id string) (*Task, error) {
 }
 
 // UpdateTask Обновляем данные задачи
-func UpdateTask(task *Task) error {
+func (s *TaskStorage) UpdateTask(task *Task) error {
 	query := `UPDATE scheduler 
               SET date = ?, title = ?, comment = ?, repeat = ? 
               WHERE id = ?`
-	res, err := DB.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	res, err := s.db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
 	if err != nil {
 		return err
 	}
@@ -90,9 +87,9 @@ func UpdateTask(task *Task) error {
 	return nil
 }
 
-func DeleteTask(id string) error {
+func (s *TaskStorage) DeleteTask(id string) error {
 	query := `DELETE FROM scheduler WHERE id = ?`
-	res, err := DB.Exec(query, id)
+	res, err := s.db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -106,10 +103,10 @@ func DeleteTask(id string) error {
 	return nil
 }
 
-func UpdateDate(next string, id string) error {
+func (s *TaskStorage) UpdateDate(next string, id string) error {
 	query := `UPDATE scheduler 
               SET date = ? WHERE id = ?`
-	res, err := DB.Exec(query, next, id)
+	res, err := s.db.Exec(query, next, id)
 	if err != nil {
 		return err
 	}

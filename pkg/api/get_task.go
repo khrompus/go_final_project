@@ -1,18 +1,21 @@
 package api
 
 import (
-	"github.com/khrompus/go_final_project/pkg/db"
 	"net/http"
 )
 
-func getTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (dBase *API) getTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		writeError(w, "Не указан идентификатор", http.StatusBadRequest)
 		return
 	}
 
-	task, err := db.GetTask(id)
+	task, err := dBase.storage.GetTask(id)
 	if err != nil {
 		writeError(w, "Задача не найдена", http.StatusInternalServerError)
 		return

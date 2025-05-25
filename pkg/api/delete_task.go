@@ -1,11 +1,10 @@
 package api
 
 import (
-	"github.com/khrompus/go_final_project/pkg/db"
 	"net/http"
 )
 
-func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (dBase *API) deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		writeError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -17,7 +16,7 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//	Удаляем задачу
-	if err := db.DeleteTask(id); err != nil {
+	if err := dBase.storage.DeleteTask(id); err != nil {
 		if err.Error() == "task not found" {
 			writeError(w, "Задача не найдена", http.StatusNotFound)
 		} else {

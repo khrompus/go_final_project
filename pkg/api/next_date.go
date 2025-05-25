@@ -9,8 +9,12 @@ import (
 	"time"
 )
 
-func nextDayHandler(res http.ResponseWriter, req *http.Request) {
-	query := req.URL.Query()
+func nextDayHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	query := r.URL.Query()
 
 	// Получаем параметры из запроса
 	nowStr := query.Get("now")
@@ -22,31 +26,36 @@ func nextDayHandler(res http.ResponseWriter, req *http.Request) {
 		now = time.Now()
 	} else {
 		var err error
-		now, err = time.Parse("20060102", nowStr)
+		now, err = time.Parse(layout, nowStr)
 		if err != nil {
-			http.Error(res, fmt.Sprintf("invalid now parameter: %v", err), http.StatusBadRequest)
+			writeError(w, fmt.Sprintf("invalid now parameter: %v", err), http.StatusBadRequest)
 			return
 		}
 	}
 
 	if dateStr == "" {
-		http.Error(res, "date parameter is required", http.StatusBadRequest)
+		writeError(w, "date parameter is required", http.StatusBadRequest)
 		return
 	}
 	if repeatRule == "" {
-		http.Error(res, "repeat parameter is required", http.StatusBadRequest)
+		writeError(w, "repeat parameter is required", http.StatusBadRequest)
 		return
 	}
 	nextDate, err := NextDate(now, dateStr, repeatRule)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		// Определяем тип ошибки для выбора HTTP статуса
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "invalid date format") ||
+			strings.Contains(err.Error(), "invalid repeat rule") {
+			status = http.StatusUnprocessableEntity
+		}
+		writeError(w, err.Error(), status)
 		return
 	}
-	fmt.Fprint(res, nextDate)
+	fmt.Fprint(w, nextDate)
 }
 
 func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
-	const layout = "20060102"
 	//Проверка на наличие Repeat
 	if repeat == "" {
 		return "", errors.New("repeat rule is empty")

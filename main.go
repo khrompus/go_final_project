@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/khrompus/go_final_project/pkg/db"
 	"github.com/khrompus/go_final_project/pkg/server"
 	"log"
@@ -9,21 +8,18 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello world")
 
-	if err := db.Init("scheduler.db"); err != nil {
+	storage, err := db.Init("scheduler.db")
+	if err != nil {
 		log.Fatalf("Ошибка инициализации базы данных: %v", err)
 	}
 	defer func() {
-		if err := db.CloseDB(); err != nil {
+		if err := storage.Close(); err != nil {
 			log.Printf("Ошибка закрытия базы данных: %v", err)
 		}
 	}()
-
-	err := server.Run()
+	err = server.Run(storage)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-
-	// Далее можно работать с базой через GetDB()
 }

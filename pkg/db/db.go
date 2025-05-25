@@ -8,7 +8,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var DB *sql.DB
+type TaskStorage struct {
+	db *sql.DB
+}
 
 const schema = `
 CREATE TABLE IF NOT EXISTS scheduler (
@@ -23,40 +25,32 @@ CREATE INDEX idx_date ON scheduler(date);
 `
 
 // Init открывает соединение с базой данных и создает схему при необходимости
-func Init(dbFile string) error {
+func Init(dbFile string) (*TaskStorage, error) {
 	// Проверяем существование файла
 	_, err := os.Stat(dbFile)
 	install := os.IsNotExist(err)
 	fmt.Println("Файл существует:", !install)
 	// Открываем базу данных
-	DB, err = sql.Open("sqlite", dbFile)
+	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
-		return fmt.Errorf("ошибка открытия базы данных: %v", err)
+		return nil, fmt.Errorf("ошибка открытия базы данных: %v", err)
 	}
 
 	// Проверяем соединение
-	if err := DB.Ping(); err != nil {
-		return fmt.Errorf("ошибка подключения к базе: %v", err)
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("ошибка подключения к базе: %v", err)
 	}
 
 	// Создаем таблицы при первом запуске
 	if install {
-		if _, err := DB.Exec(schema); err != nil {
-			return fmt.Errorf("ошибка создания схемы: %v", err)
+		if _, err := db.Exec(schema); err != nil {
+			return nil, fmt.Errorf("ошибка создания схемы: %v", err)
 		}
 		fmt.Println("База данных инициализирована (созданы таблицы)")
 	}
 
-	return nil
+	return &TaskStorage{db: db}, nil
 }
-func CloseDB() error {
-	if DB != nil {
-		return DB.Close()
-	}
-	return nil
-}
-
-// GetDB возвращает глобальное соединение с базой данных
-func GetDB() *sql.DB {
-	return DB
+func (s *TaskStorage) Close() error {
+	return s.db.Close()
 }
